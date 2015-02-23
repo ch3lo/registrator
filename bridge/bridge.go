@@ -5,9 +5,6 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"path"
-	"strconv"
-	"strings"
 	"sync"
 
 	dockerapi "github.com/fsouza/go-dockerclient"
@@ -145,7 +142,7 @@ func (b *Bridge) add(containerId string, quiet bool) {
 			continue
 		}
 		service := b.newService(port, len(ports) > 1)
-		if service == nil {
+		if service.ignore() {
 			if !quiet {
 				log.Println("ignored:", container.ID[:12], "service on port", port.ExposedPort)
 			}
@@ -167,12 +164,6 @@ func (b *Bridge) add(containerId string, quiet bool) {
 }
 
 func (b *Bridge) newService(port ServicePort, isgroup bool) *Service {
-	container := port.container
-	defaultName := strings.Split(path.Base(container.Config.Image), ":")[0]
-	if isgroup {
-		defaultName = defaultName + "-" + port.ExposedPort
-	}
-
 	// not sure about this logic. kind of want to remove it.
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -190,45 +181,14 @@ func (b *Bridge) newService(port ServicePort, isgroup bool) *Service {
 		port.HostIP = b.config.HostIp
 	}
 
-	metadata := serviceMetaData(container.Config.Env, port.ExposedPort)
+	service := NewService(port)
+	defer service.cleanMetadata()
 
-	ignore := mapDefault(metadata, "ignore", "")
-	if ignore != "" {
-		return nil
-	}
-
-	service := new(Service)
-	service.Origin = port
-	service.ID = hostname + ":" + container.Name[1:] + ":" + port.ExposedPort
-	service.Name = mapDefault(metadata, "name", defaultName)
-	var p int
-	if b.config.Internal == true {
-		service.IP = port.ExposedIP
-		p, _ = strconv.Atoi(port.ExposedPort)
-	} else {
-		service.IP = port.HostIP
-		p, _ = strconv.Atoi(port.HostPort)
-	}
-	service.Port = p
-
-	if port.PortType == "udp" {
-		service.Tags = combineTags(
-			mapDefault(metadata, "tags", ""), b.config.ForceTags, "udp")
-		service.ID = service.ID + ":udp"
-	} else {
-		service.Tags = combineTags(
-			mapDefault(metadata, "tags", ""), b.config.ForceTags)
-	}
-
-	id := mapDefault(metadata, "id", "")
-	if id != "" {
-		service.ID = id
-	}
-
-	delete(metadata, "id")
-	delete(metadata, "tags")
-	delete(metadata, "name")
-	service.Attrs = metadata
+	service.setId(hostname)
+	service.setName(isgroup)
+	service.setIp(b.config.Internal)
+	service.setPort(b.config.Internal)
+	service.setTags(b.config.ForceTags)
 	service.TTL = b.config.RefreshTtl
 
 	return service
