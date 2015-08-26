@@ -74,9 +74,9 @@ func (r *EtcdAdapter) Register(service *bridge.Service) error {
 
 	var err error
 	if r.client != nil {
-		_, err = r.client.Set(path, addr, uint64(service.TTL))
+		_, err = r.client.Set(path, addr, uint64(service.Ttl))
 	} else {
-		_, err = r.client2.Set(path, addr, uint64(service.TTL))
+		_, err = r.client2.Set(path, addr, uint64(service.Ttl))
 	}
 
 	if err != nil {

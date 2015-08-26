@@ -46,7 +46,7 @@ func (r *Skydns2Adapter) Ping() error {
 func (r *Skydns2Adapter) Register(service *bridge.Service) error {
 	port := strconv.Itoa(service.Port)
 	record := `{"host":"` + service.IP + `","port":` + port + `}`
-	_, err := r.client.Set(r.servicePath(service), record, uint64(service.TTL))
+	_, err := r.client.Set(r.servicePath(service), record, uint64(service.Ttl))
 	if err != nil {
 		log.Println("skydns2: failed to register service:", err)
 	}

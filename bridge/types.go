@@ -30,13 +30,14 @@ type Config struct {
 }
 
 type Service struct {
-	ID    string
-	Name  string
-	Port  int
-	IP    string
-	Tags  []string
-	Attrs map[string]string
-	TTL   int
+	ID          string
+	Name        string
+	Port        int
+	IP          string
+	Tags        []string
+	Attrs       map[string]string
+	Ttl         int
+	TtlInterval int
 
 	Origin ServicePort
 }

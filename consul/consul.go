@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/gliderlabs/registrator/bridge"
@@ -76,14 +77,18 @@ func (r *ConsulAdapter) buildCheck(service *bridge.Service) *consulapi.AgentServ
 		check.Script = r.interpolateService(script, service)
 	} else if ttl := service.Attrs["check_ttl"]; ttl != "" {
 		check.TTL = ttl
+	} else if service.Ttl != 0 {
+		check.TTL = strconv.Itoa(service.Ttl) + "s"
 	} else {
 		return nil
 	}
-	if check.Script != "" || check.HTTP != "" {
+	if check.Script != "" || check.HTTP != "" || check.TTL != "" {
+		check.Interval = DefaultInterval
+
 		if interval := service.Attrs["check_interval"]; interval != "" {
 			check.Interval = interval
-		} else {
-			check.Interval = DefaultInterval
+		} else if service.TtlInterval != 0 {
+			check.Interval = strconv.Itoa(service.TtlInterval) + "s"
 		}
 	}
 	return check
