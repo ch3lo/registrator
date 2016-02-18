@@ -144,6 +144,7 @@ func (b *Bridge) Sync(quiet bool) {
 			serviceContainerName := matches[2]
 			for _, listing := range b.services {
 				for _, service := range listing {
+					log.Printf("service.Name %s, extService.Name %s, serviceContainerName %s, service.Origin.container.Name[1:] %s", service.Name, extService.Name, serviceContainerName, service.Origin.container.Name[1:])
 					if service.Name == extService.Name && serviceContainerName == service.Origin.container.Name[1:] {
 						continue Outer
 					}

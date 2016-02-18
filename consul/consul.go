@@ -102,22 +102,26 @@ func (r *ConsulAdapter) Refresh(service *bridge.Service) error {
 }
 
 func (r *ConsulAdapter) Services() ([]*bridge.Service, error) {
-	services, err := r.client.Agent().Services()
+	catalogServices, _, err := r.client.Catalog().Services(nil)
 	if err != nil {
 		return []*bridge.Service{}, err
 	}
-	out := make([]*bridge.Service, len(services))
-	i := 0
-	for _, v := range services {
-		s := &bridge.Service{
-			ID:   v.ID,
-			Name: v.Service,
-			Port: v.Port,
-			Tags: v.Tags,
-			IP:   v.Address,
+	out := []*bridge.Service{}
+	for catalogSrv := range catalogServices {
+		services, _, err := r.client.Catalog().Service(catalogSrv, "", nil)
+		if err != nil {
+			return []*bridge.Service{}, err
 		}
-		out[i] = s
-		i++
+		for _, srv := range services {
+			s := &bridge.Service{
+				ID:   srv.ServiceID,
+				Name: srv.ServiceName,
+				Port: srv.ServicePort,
+				Tags: srv.ServiceTags,
+				IP:   srv.ServiceAddress,
+			}
+			out = append(out, s)
+		}
 	}
 	return out, nil
 }
