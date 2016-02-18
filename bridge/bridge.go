@@ -96,7 +96,7 @@ func (b *Bridge) Sync(quiet bool) {
 		log.Println("error listing containers, skipping sync")
 		return
 	} else if err != nil && !quiet {
-		log.Fatal(err)
+		log.Fatal(err) //TODO No es necesario
 	}
 
 	log.Printf("Syncing services on %d containers", len(containers))
@@ -129,7 +129,9 @@ func (b *Bridge) Sync(quiet bool) {
 
 	Outer:
 		for _, extService := range extServices {
+			log.Printf("Revisando servicio %+v", extService)
 			matches := serviceIDPattern.FindStringSubmatch(extService.ID)
+			log.Printf("Matches %+v", matches)
 			if len(matches) != 3 {
 				// There's no way this was registered by us, so leave it
 				continue
